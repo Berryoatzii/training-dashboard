@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Training Dashboard 2026 - Thairath Group</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans Thai','Inter',sans-serif;background:#0f172a;color:#e2e8f0;width:100vw;height:100vh;overflow:hidden}
+.d{width:100%;height:100%;padding:8px 16px 4px;display:flex;flex-direction:column;gap:5px}
+
+.hdr{display:flex;justify-content:space-between;align-items:center;height:36px;flex-shrink:0}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.logo{background:#000;border:1px solid #1a8f3f;border-radius:7px;padding:2px 10px;height:32px;display:flex;align-items:center}
+.logo-th{font-family:Inter;font-weight:900;font-size:15px;color:#1a8f3f;line-height:1}
+.logo-ln{width:55px;height:1px;background:#fff;margin:1px 0}
+.logo-gr{font-family:Inter;font-weight:800;font-size:8px;color:#fff;letter-spacing:2px;line-height:1}
+.hdr-t{font-family:Inter;font-size:20px;font-weight:900;letter-spacing:-.5px;color:#fff}
+.hdr-s{font-size:11px;color:#94a3b8}
+.hdr-r{display:flex;align-items:center;gap:6px}
+.bdg{display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700}
+.bdg-live{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.bdg-gs{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+.bdg-gs.off{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.ldot{width:5px;height:5px;background:#10b981;border-radius:50%;animation:bl 2s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.25}}
+
+.fil{display:flex;gap:4px;flex-shrink:0;align-items:center;height:28px}
+.f-l{font-size:10px;font-weight:700;color:#64748b;margin-right:3px;letter-spacing:.5px}
+.fb{padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #334155;background:rgba(30,41,59,.8);color:#94a3b8;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.fb:hover{border-color:#3b82f6;color:#60a5fa;transform:translateY(-1px)}
+.fb.act{background:linear-gradient(135deg,#1a8f3f,#15803d);color:#fff;border-color:#22c55e;box-shadow:0 2px 10px rgba(34,197,94,.3)}
+.fb .ico{font-size:13px}
+.bu-desc{font-size:10px;color:#64748b;margin-left:6px;font-weight:500;font-style:italic}
+
+.zones{display:flex;gap:2px;flex-shrink:0;height:26px;background:rgba(30,41,59,.6);border-radius:8px;padding:2px}
+.ztab{flex:1;text-align:center;padding:3px 0;font-size:12px;font-weight:700;cursor:pointer;border-radius:6px;color:#64748b;transition:all .2s}
+.ztab:hover{color:#94a3b8;background:rgba(51,65,85,.5)}
+.ztab.act{color:#fff;background:linear-gradient(135deg,#1a8f3f,#15803d);box-shadow:0 2px 8px rgba(34,197,94,.25)}
+.zone{display:none;flex:1;min-height:0}
+.zone.act{display:flex;flex-direction:column;gap:5px}
+
+.card{background:linear-gradient(135deg,#1e293b,#1a2332);border:1px solid #334155;border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;overflow:hidden}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.card-title{font-size:13px;font-weight:700;color:#e2e8f0}
+.card-body{flex:1;min-height:0;position:relative}
+
+.kpi-card{background:linear-gradient(135deg,#1e293b,#1a2332);border:1px solid #334155;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;gap:1px}
+.kpi-card .kpi-label{font-size:11px;color:#94a3b8;font-weight:600}
+.kpi-card .kpi-value{font-family:Inter;font-size:24px;font-weight:900;line-height:1.15}
+.kpi-card .kpi-sub{font-size:10px;color:#64748b;display:flex;align-items:center;gap:4px}
+.kpi-card .kpi-bar{height:4px;background:rgba(51,65,85,.4);border-radius:2px;margin-top:2px;overflow:hidden}
+.kpi-card .kpi-bar-f{height:100%;border-radius:2px;transition:width .8s}
+
+/* Scale */
+.sc-w{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+.sc-top{display:flex;justify-content:space-between;width:100%;padding:0 10px;margin-bottom:0}
+.sc-lbl{font-size:13px;font-weight:700;text-align:center;line-height:1.2}
+.sc-lbl.on{color:#10b981}.sc-lbl.ad{color:#ef4444}
+.sc-lbl span{font-size:24px;font-family:Inter;font-weight:900;display:block}
+.sc-beam{transition:transform .8s cubic-bezier(.34,1.56,.64,1)}
+.sc-verd{font-size:12px;font-weight:800;padding:3px 12px;border-radius:8px;margin-top:2px}
+.sc-leg{display:flex;gap:12px;margin-top:2px}
+.sc-leg-i{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#94a3b8}
+.sc-leg-d{width:8px;height:8px;border-radius:2px}
+
+/* Top 5 */
+.top5{display:flex;flex-direction:column;gap:5px;height:100%;justify-content:center}
+.t5-row{display:flex;align-items:center;gap:8px}
+.t5-rank{font-family:Inter;font-size:16px;font-weight:900;color:#fbbf24;width:22px;text-align:center}
+.t5-name{font-size:13px;font-weight:600;flex:1;color:#e2e8f0}
+.t5-bar-bg{width:90px;height:14px;background:rgba(51,65,85,.6);border-radius:7px;overflow:hidden}
+.t5-bar-f{height:100%;border-radius:7px;transition:width .6s}
+.t5-val{font-family:Inter;font-size:13px;font-weight:800;width:22px;text-align:right}
+
+/* Race */
+.race-track{display:flex;flex-direction:column;justify-content:center;gap:6px;height:100%;padding:2px 4px}
+.race-lane{display:flex;align-items:center;gap:6px}
+.race-bu{font-family:Inter;font-size:13px;font-weight:800;width:50px;color:#e2e8f0;text-align:right}
+.race-road{flex:1;height:26px;background:rgba(51,65,85,.3);border-radius:13px;position:relative;overflow:visible;border:1px solid #334155}
+.race-finish{position:absolute;right:0;top:0;bottom:0;width:3px;background:repeating-linear-gradient(180deg,#fff 0px,#fff 3px,#000 3px,#000 6px)}
+.race-runner{position:absolute;left:0;top:2px;bottom:2px;border-radius:11px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-family:Inter;font-size:10px;font-weight:800;color:#fff;transition:width 1.2s cubic-bezier(.22,1,.36,1);min-width:30px;overflow:visible}
+.race-runner .ri{position:absolute;right:-16px;top:50%;transform:translateY(-50%);font-size:18px;animation:bounce .6s infinite alternate}
+@keyframes bounce{from{transform:translateY(-50%) translateX(0)}to{transform:translateY(-50%) translateX(3px)}}
+.race-pct{font-family:Inter;font-size:13px;font-weight:800;width:50px;text-align:left}
+.race-target{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fbbf24;z-index:2}
+.race-target-lbl{position:absolute;top:-12px;font-size:9px;color:#fbbf24;font-weight:700;left:-8px}
+.race-sum{text-align:center;padding:4px;background:rgba(51,65,85,.3);border-radius:8px;font-size:12px;font-weight:700;color:#94a3b8;margin-top:3px}
+.race-flag{position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.4}
+
+/* Alerts */
+.alerts-wrap{display:flex;flex-direction:column;gap:3px}
+.al-item{display:flex;align-items:flex-start;gap:4px;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;line-height:1.3}
+.al-item.warn{background:rgba(245,158,11,.1);color:#fbbf24}
+.al-item.ok{background:rgba(16,185,129,.1);color:#10b981}
+.al-item.danger{background:rgba(239,68,68,.1);color:#ef4444}
+.al-item.info{background:rgba(59,130,246,.1);color:#60a5fa}
+
+/* Donut */
+.dn-lay{display:flex;align-items:center;justify-content:center;gap:12px;height:100%}
+.lg-l{display:flex;flex-direction:column;gap:3px}
+.lg-i{display:flex;align-items:center;gap:5px;font-size:12px;color:#94a3b8}
+.lg-d{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lg-b{font-weight:700;min-width:28px;color:#e2e8f0}
+
+/* DSD grid */
+.dsd-grid{display:flex;flex-direction:column;gap:8px;height:100%;justify-content:center}
+.dsd-row{display:grid;grid-template-columns:55px 1fr 65px;align-items:center;gap:8px}
+.dsd-bu{font-size:14px;font-weight:700;font-family:Inter;color:#e2e8f0}
+.dsd-bg{height:20px;background:rgba(51,65,85,.4);border-radius:10px;overflow:hidden}
+.dsd-f{height:100%;border-radius:10px;transition:width .8s}
+.dsd-f.low{background:linear-gradient(90deg,#ef4444,#f59e0b)}.dsd-f.mid{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.dsd-f.hi{background:linear-gradient(90deg,#10b981,#34d399)}
+.dsd-inf{font-size:12px;text-align:right;font-family:Inter;font-weight:700}
+
+.alert{background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(245,158,11,.08));border-left:3px solid #f59e0b;border-radius:8px;padding:5px 10px;font-size:12px;color:#fbbf24;font-weight:500;line-height:1.3}
+
+.foot{height:14px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#475569}
+</style>
+</head>
+<body>
+<div class="d">
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="logo"><div><div class="logo-th">THAIRATH</div><div class="logo-ln"></div><div class="logo-gr">GROUP</div></div></div>
+      <div><div class="hdr-t">TRAINING DASHBOARD 2026</div><div class="hdr-s">People Development Division — ภาพรวมการฝึกอบรมประจำปี 2026</div></div>
+    </div>
+    <div class="hdr-r">
+      <div class="bdg bdg-gs off" id="gsS"><span id="gsI">⏳</span><span id="gsL">กำลังโหลด...</span></div>
+      <div class="bdg bdg-live"><div class="ldot"></div>LIVE</div>
+    </div>
+  </div>
+
+  <div class="fil">
+    <span class="f-l">กรอง BU:</span>
+    <button class="fb act" onclick="sf('ALL',this)"><span class="ico">🏢</span>ทั้งหมด</button>
+    <button class="fb" onclick="sf('TR',this)"><span class="ico">📰</span>TR</button>
+    <button class="fb" onclick="sf('VG3',this)"><span class="ico">🌐</span>VG3</button>
+    <button class="fb" onclick="sf('TVB',this)"><span class="ico">📺</span>TVB</button>
+    <button class="fb" onclick="sf('TRL',this)"><span class="ico">🚚</span>TRL</button>
+    <button class="fb" onclick="sf('TRC',this)"><span class="ico">🛒</span>TRC</button>
+    <button class="fb" onclick="sf('EVP',this)"><span class="ico">💄</span>EVP</button>
+    <button class="fb" onclick="sf('YOD',this)"><span class="ico">💻</span>YOD</button>
+    <span class="bu-desc" id="buDesc">ภาพรวมทุกบริษัทในกลุ่มไทยรัฐ</span>
+  </div>
+
+  <div class="zones">
+    <div class="ztab act" onclick="sz(0,this)">📊 ภาพรวมผู้บริหาร</div>
+    <div class="ztab" onclick="sz(1,this)">💰 งบประมาณ</div>
+    <div class="ztab" onclick="sz(2,this)">📚 หลักสูตร & ทักษะ</div>
+    <div class="ztab" onclick="sz(3,this)">🏛️ กรมพัฒนาฝีมือแรงงาน</div>
+  </div>
+
+  <!-- ===== ZONE 0: EXECUTIVE SUMMARY ===== -->
+  <div class="zone act" id="z0">
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">💰 งบทั้งหมด (Plan)</div><div class="kpi-value" style="color:#10b981" id="k0Bgt">—</div><div class="kpi-sub">บาท</div><div class="kpi-bar"><div class="kpi-bar-f" id="k0BgtBar" style="background:#10b981;width:100%"></div></div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">🔥 ใช้ไปแล้ว (Actual)</div><div class="kpi-value" style="color:#f59e0b" id="k0Act">—</div><div class="kpi-sub" id="k0ActSub">—</div><div class="kpi-bar"><div class="kpi-bar-f" id="k0ActBar" style="background:#f59e0b;width:0%"></div></div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">💚 คงเหลือ</div><div class="kpi-value" style="color:#22d3ee" id="k0Rem">—</div><div class="kpi-sub" id="k0RemSub">—</div><div class="kpi-bar"><div class="kpi-bar-f" id="k0RemBar" style="background:#22d3ee;width:0%"></div></div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">📚 หลักสูตรทั้งหมด</div><div class="kpi-value" style="color:#60a5fa" id="k0Crs">—</div><div class="kpi-sub" id="k0CrsSub">หลักสูตร</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">👥 ผู้เข้าอบรม</div><div class="kpi-value" style="color:#a78bfa" id="k0Ppl">—</div><div class="kpi-sub">คน</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">🏛️ กรมพัฒฯ Progress</div><div class="kpi-value" style="color:#ec4899" id="k0Dsd">—</div><div class="kpi-sub">ของเป้า 50%</div><div class="kpi-bar"><div class="kpi-bar-f" id="k0DsdBar" style="background:#ec4899;width:0%"></div></div></div>
+    </div>
+    <!-- Row 2: 3 columns -->
+    <div style="display:flex;gap:5px;flex:1;min-height:0">
+      <!-- Col 1: Donut + Utilization + Course Type -->
+      <div style="flex:1.2;display:flex;flex-direction:column;gap:5px;min-height:0">
+        <div class="card" style="flex:1">
+          <div class="card-h"><div class="card-title">🍩 สัดส่วนการใช้งบ & % Utilization</div></div>
+          <div class="card-body"><div class="dn-lay"><div style="position:relative;width:140px;height:140px"><canvas id="exDn" width="140" height="140"></canvas><div id="exDnCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center"><div style="font-family:Inter;font-size:20px;font-weight:900;color:#f59e0b" id="exUtilPct">—</div><div style="font-size:10px;color:#64748b">ใช้งบแล้ว</div></div></div><div class="lg-l" id="exLg"></div></div></div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="card-h"><div class="card-title">📚 ประเภทหลักสูตร by BU</div></div>
+          <div class="card-body"><canvas id="exChType"></canvas></div>
+        </div>
+      </div>
+      <!-- Col 2: Scale + Top 5 -->
+      <div style="flex:0.85;display:flex;flex-direction:column;gap:5px;min-height:0">
+        <div class="card" style="flex:1">
+          <div class="card-h"><div class="card-title">⚖️ On-Plan vs Ad-Hoc</div></div>
+          <div class="card-body">
+            <div class="sc-w">
+              <div class="sc-top"><div class="sc-lbl on">ตาม Plan<span id="exSvL">—</span></div><div class="sc-lbl ad">Ad-Hoc<span id="exSvR">—</span></div></div>
+              <svg viewBox="0 0 260 100" style="width:230px;height:88px">
+                <defs><linearGradient id="gG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0d060"/><stop offset="50%" stop-color="#d4a017"/><stop offset="100%" stop-color="#b8860b"/></linearGradient><linearGradient id="pG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5e6a3"/><stop offset="100%" stop-color="#c9a227"/></linearGradient><filter id="gl"><feGaussianBlur stdDeviation="1" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                <rect x="113" y="78" width="34" height="9" rx="3" fill="url(#gG)"/><rect x="109" y="85" width="42" height="5" rx="2" fill="#b8860b"/>
+                <rect x="128" y="30" width="4" height="50" rx="2" fill="url(#gG)"/>
+                <circle cx="130" cy="30" r="5" fill="url(#gG)" stroke="#b8860b" stroke-width=".5"/><circle cx="130" cy="30" r="2" fill="#f5e6a3"/>
+                <g id="scB" class="sc-beam" style="transform-origin:130px 30px">
+                  <rect x="20" y="28" width="220" height="4" rx="2" fill="url(#gG)" stroke="#b8860b" stroke-width=".3"/>
+                  <line x1="38" y1="32" x2="30" y2="50" stroke="#d4a017" stroke-width="1"/><line x1="56" y1="32" x2="64" y2="50" stroke="#d4a017" stroke-width="1"/>
+                  <line x1="204" y1="32" x2="196" y2="50" stroke="#d4a017" stroke-width="1"/><line x1="222" y1="32" x2="230" y2="50" stroke="#d4a017" stroke-width="1"/>
+                  <g><ellipse cx="47" cy="53" rx="24" ry="4" fill="url(#pG)" stroke="#b8860b" stroke-width=".3"/><g id="sIL" filter="url(#gl)"></g></g>
+                  <g><ellipse cx="213" cy="53" rx="24" ry="4" fill="url(#pG)" stroke="#b8860b" stroke-width=".3"/><g id="sIR" filter="url(#gl)"></g></g>
+                </g>
+              </svg>
+              <div class="sc-verd" id="scV"></div>
+              <div class="sc-leg"><div class="sc-leg-i"><div class="sc-leg-d" style="background:#10b981"></div><span id="scPL">—</span></div><div class="sc-leg-i"><div class="sc-leg-d" style="background:#ef4444"></div><span id="scPR">—</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="card-h"><div class="card-title">🏆 Top 5 หมวดทักษะ</div></div>
+          <div class="card-body"><div class="top5" id="top5"></div></div>
+        </div>
+      </div>
+      <!-- Col 3: DSD Race + Alerts -->
+      <div style="flex:0.85;display:flex;flex-direction:column;gap:5px;min-height:0">
+        <div class="card" style="flex:1.2">
+          <div class="card-h"><div class="card-title">🏃 กรมพัฒฯ — วิ่งเข้าเส้นชัย 50%</div></div>
+          <div class="card-body"><div class="race-track" id="raceTrack"></div></div>
+        </div>
+        <div class="card" style="flex:0.8">
+          <div class="card-h"><div class="card-title">⚡ สัญญาณเตือน</div></div>
+          <div class="card-body"><div class="alerts-wrap" id="exAlerts" style="height:100%;justify-content:center"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ZONE 1: BUDGET DETAIL ===== -->
+  <div class="zone" id="z1">
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">💰 งบทั้งหมด</div><div class="kpi-value" style="color:#10b981" id="z1Plan">—</div><div class="kpi-sub">บาท</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">🔥 ใช้ไปแล้ว</div><div class="kpi-value" style="color:#f59e0b" id="z1Act">—</div><div class="kpi-sub" id="z1ActPct">—</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">💚 คงเหลือ</div><div class="kpi-value" style="color:#22d3ee" id="z1Rem">—</div><div class="kpi-sub" id="z1RemPct">—</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">📚 หลักสูตรทั้งหมด</div><div class="kpi-value" style="color:#60a5fa" id="z1Crs">—</div><div class="kpi-sub">หลักสูตร</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">👥 คนอบรม</div><div class="kpi-value" style="color:#a78bfa" id="z1Ppl">—</div><div class="kpi-sub">คน</div></div>
+    </div>
+    <div style="flex:1;display:flex;gap:5px;min-height:0">
+      <div class="card" style="flex:1.3"><div class="card-h"><div class="card-title">📊 งบประมาณราย BU — Plan vs Actual</div></div><div class="card-body"><canvas id="chBgt"></canvas></div></div>
+      <div class="card" style="flex:0.7"><div class="card-h"><div class="card-title">📈 % การใช้งบ</div></div><div class="card-body"><canvas id="chUtil"></canvas></div><div class="alert" id="alertBgt" style="display:none;margin-top:2px"></div></div>
+      <div class="card" style="flex:0.55"><div class="card-h"><div class="card-title">🍩 สัดส่วนการใช้งบ</div></div><div class="card-body"><div class="dn-lay"><div style="position:relative;width:120px;height:120px"><canvas id="chDn" width="120" height="120"></canvas></div><div class="lg-l" id="lgDn"></div></div></div></div>
+    </div>
+  </div>
+
+  <!-- ===== ZONE 2: COURSES DETAIL ===== -->
+  <div class="zone" id="z2">
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">Soft Skills</div><div class="kpi-value" style="color:#5ecfcf" id="z2Soft">—</div><div class="kpi-sub">หลักสูตร</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">Hard Skills</div><div class="kpi-value" style="color:#a78bfa" id="z2Hard">—</div><div class="kpi-sub">หลักสูตร</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">Compliance</div><div class="kpi-value" style="color:#94a3b8" id="z2Comp">—</div><div class="kpi-sub">หลักสูตร</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">Onboarding</div><div class="kpi-value" style="color:#f5841f" id="z2Onb">—</div><div class="kpi-sub" id="z2OnbPpl">—</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">On Plan / Adhoc</div><div class="kpi-value" style="color:#ec4899" id="z2PA">—</div><div class="kpi-sub">หลักสูตร</div></div>
+    </div>
+    <div style="flex:1;display:flex;gap:5px;min-height:0">
+      <div class="card" style="flex:1.2"><div class="card-h"><div class="card-title">📚 ประเภทหลักสูตร by BU</div></div><div class="card-body"><canvas id="chType"></canvas></div></div>
+      <div class="card" style="flex:0.7">
+        <div class="card-h"><div class="card-title">⚖️ On-Plan vs Ad-Hoc</div></div>
+        <div class="card-body"><div class="sc-w">
+          <div class="sc-top"><div class="sc-lbl on">ตาม Plan<span id="z2SvL">—</span></div><div class="sc-lbl ad">Ad-Hoc<span id="z2SvR">—</span></div></div>
+          <svg viewBox="0 0 260 100" style="width:230px;height:88px">
+            <rect x="113" y="78" width="34" height="9" rx="3" fill="url(#gG)"/><rect x="109" y="85" width="42" height="5" rx="2" fill="#b8860b"/>
+            <rect x="128" y="30" width="4" height="50" rx="2" fill="url(#gG)"/>
+            <circle cx="130" cy="30" r="5" fill="url(#gG)" stroke="#b8860b" stroke-width=".5"/><circle cx="130" cy="30" r="2" fill="#f5e6a3"/>
+            <g id="scB2" class="sc-beam" style="transform-origin:130px 30px">
+              <rect x="20" y="28" width="220" height="4" rx="2" fill="url(#gG)" stroke="#b8860b" stroke-width=".3"/>
+              <line x1="38" y1="32" x2="30" y2="50" stroke="#d4a017" stroke-width="1"/><line x1="56" y1="32" x2="64" y2="50" stroke="#d4a017" stroke-width="1"/>
+              <line x1="204" y1="32" x2="196" y2="50" stroke="#d4a017" stroke-width="1"/><line x1="222" y1="32" x2="230" y2="50" stroke="#d4a017" stroke-width="1"/>
+              <g><ellipse cx="47" cy="53" rx="24" ry="4" fill="url(#pG)" stroke="#b8860b" stroke-width=".3"/><g id="z2IL" filter="url(#gl)"></g></g>
+              <g><ellipse cx="213" cy="53" rx="24" ry="4" fill="url(#pG)" stroke="#b8860b" stroke-width=".3"/><g id="z2IR" filter="url(#gl)"></g></g>
+            </g>
+          </svg>
+          <div class="sc-verd" id="z2ScV"></div>
+          <div class="sc-leg"><div class="sc-leg-i"><div class="sc-leg-d" style="background:#10b981"></div><span id="z2PL">—</span></div><div class="sc-leg-i"><div class="sc-leg-d" style="background:#ef4444"></div><span id="z2PR">—</span></div></div>
+        </div></div>
+      </div>
+      <div class="card" style="flex:0.5"><div class="card-h"><div class="card-title">🏆 Top 5 หมวดทักษะ</div></div><div class="card-body"><div class="top5" id="top5d"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ===== ZONE 3: กรมพัฒฯ DETAIL ===== -->
+  <div class="zone" id="z3">
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">🎯 เป้าหมาย (50%)</div><div class="kpi-value" style="color:#ef4444" id="z3Tgt">—</div><div class="kpi-sub">คน</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">📋 ยื่นแล้ว / รออนุมัติ</div><div class="kpi-value" style="color:#fbbf24" id="z3Sub">—</div><div class="kpi-sub">คน</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">✅ อนุมัติแล้ว</div><div class="kpi-value" style="color:#10b981" id="z3App">—</div><div class="kpi-sub">คน</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">📈 Progress รวม</div><div class="kpi-value" style="color:#60a5fa" id="z3Pct">—</div><div class="kpi-sub">ของเป้า 50%</div></div>
+      <div class="kpi-card" style="flex:1"><div class="kpi-label">👥 พนักงานทั้งหมด</div><div class="kpi-value" style="color:#a78bfa" id="z3Emp">—</div><div class="kpi-sub">คน (4 BU)</div></div>
+    </div>
+    <div style="flex:1;display:flex;gap:5px;min-height:0">
+      <div class="card" style="flex:1"><div class="card-h"><div class="card-title">📊 สถานะการยื่นกรมพัฒฯ ราย BU</div></div><div class="card-body"><div class="dsd-grid" id="dsdGrid"></div></div></div>
+      <div class="card" style="flex:1"><div class="card-h"><div class="card-title">🏃 วิ่งแข่งเข้าเส้นชัย 50%</div></div><div class="card-body"><div class="race-track" id="raceTrackD"></div></div></div>
+    </div>
+  </div>
+
+  <div class="foot"><div>Thairath Group • People Development • Confidential</div><div id="ftI">กำลังโหลด...</div></div>
+</div>
+
+<script>
+const CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vR6TrgZQq2L6ASCECytsAADON4-2Woa7Gzt5JFqMjbz6XJe3M321mvC7oTHlAl-mgCHnSwMh-B7xIMl/pub?gid=2033182839&single=true&output=csv';
+const REFRESH=60000;
+const BU_META={
+  'ALL':{icon:'🏢',desc:'ภาพรวมทุกบริษัทในกลุ่มไทยรัฐ',color:'#1a8f3f'},
+  'TR':{icon:'📰',desc:'ธุรกิจข่าว & หนังสือพิมพ์ไทยรัฐ',color:'#1a5276'},
+  'VG3':{icon:'🌐',desc:'Thairath Online — สื่อดิจิทัล',color:'#2ecc71'},
+  'TVB':{icon:'📺',desc:'ไทยรัฐทีวี — สถานีโทรทัศน์',color:'#e74c3c'},
+  'TRL':{icon:'🚚',desc:'ไทยรัฐโลจิสติก — กระจายสินค้า',color:'#f39c12'},
+  'TRC':{icon:'🛒',desc:'ไทยรัฐคอนซูมเมอร์ — สินค้าอุปโภค',color:'#3498db'},
+  'EVP':{icon:'💄',desc:'EverPink — เครื่องสำอาง & ความงาม',color:'#e91e8b'},
+  'YOD':{icon:'💻',desc:'YOD — ธุรกิจ IT & Technology',color:'#8e44ad'}
+};
+const FB={training:[
+{bu:"TR",op:{ih:{s:1,h:0,c:0},pb:{s:1,h:0,c:0},sum:2},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:1,c:0},sum:3},ppl:4,onb:{c:9,e:16},bgt:{p:390000,a:5200,r:384800},tot:{s:2,h:1,c:0,ob:9,a:5200,r:384800}},
+{bu:"VG3",op:{ih:{s:1,h:0,c:0},pb:{s:0,h:0,c:0},sum:1},ad:{ih:{s:0,h:4,c:0},pb:{s:0,h:1,c:0},sum:6},ppl:51,onb:{c:13,e:54},bgt:{p:450000,a:45000,r:405000},tot:{s:1,h:5,c:0,ob:13,a:45000,r:405000}},
+{bu:"TVB",op:{ih:{s:1,h:0,c:0},pb:{s:0,h:0,c:0},sum:1},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:2,c:0},sum:3},ppl:20,onb:{c:6,e:14},bgt:{p:300000,a:172052,r:127948},tot:{s:1,h:2,c:0,ob:6,a:173244,r:126756}},
+{bu:"TRL",op:{ih:{s:1,h:0,c:0},pb:{s:0,h:0,c:0},sum:1},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:1,c:3},sum:5},ppl:5,onb:{c:3,e:1},bgt:{p:600000,a:46545,r:553455},tot:{s:1,h:1,c:3,ob:3,a:46545,r:553455}},
+{bu:"TRC",op:{ih:{s:0,h:0,c:0},pb:{s:0,h:0,c:0},sum:0},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:0,c:0},sum:0},ppl:0,onb:{c:5,e:5},bgt:{p:50000,a:0,r:50000},tot:{s:0,h:0,c:0,ob:5,a:0,r:50000}},
+{bu:"EVP",op:{ih:{s:1,h:0,c:0},pb:{s:0,h:0,c:0},sum:1},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:0,c:0},sum:1},ppl:4,onb:{c:5,e:6},bgt:{p:0,a:0,r:0},tot:{s:1,h:0,c:0,ob:5,a:0,r:0}},
+{bu:"YOD",op:{ih:{s:0,h:0,c:0},pb:{s:0,h:0,c:0},sum:0},ad:{ih:{s:0,h:0,c:0},pb:{s:0,h:0,c:0},sum:0},ppl:0,onb:{c:0,e:0},bgt:{p:50000,a:0,r:50000},tot:{s:0,h:0,c:0,ob:0,a:0,r:50000}}
+],dsd:[{bu:"TR",e:691,t:346,s:2,a:0,p:.29},{bu:"VG3",e:236,t:118,s:23,a:0,p:9.75},{bu:"TVB",e:513,t:257,s:1,a:0,p:.19},{bu:"TRL",e:112,t:56,s:0,a:0,p:0}]};
+
+const fm=n=>n.toLocaleString('en-US');
+let CTS={},DATA=null,FIL='ALL',ZONE=0;
+
+function sf(bu,el){FIL=bu;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('act'));el.classList.add('act');document.getElementById('buDesc').textContent=(BU_META[bu]||BU_META.ALL).desc;if(DATA)render(DATA)}
+function sz(z,el){ZONE=z;document.querySelectorAll('.ztab').forEach(t=>t.classList.remove('act'));el.classList.add('act');document.querySelectorAll('.zone').forEach(zn=>zn.classList.remove('act'));document.getElementById('z'+z).classList.add('act');if(DATA)render(DATA)}
+
+async function loadGS(){
+  try{const r=await fetch(CSV_URL);if(!r.ok)throw 0;const csv=await r.text();const p=Papa.parse(csv,{header:false,skipEmptyLines:true});const d=parseGS(p.data);
+    if(d){document.getElementById('gsS').className='bdg bdg-gs';document.getElementById('gsI').textContent='🟢';document.getElementById('gsL').textContent='เชื่อมต่อแล้ว';document.getElementById('ftI').textContent='Google Sheets Live • '+new Date().toLocaleTimeString('th-TH');return d}
+  }catch(e){document.getElementById('gsS').className='bdg bdg-gs off';document.getElementById('gsI').textContent='🟡';document.getElementById('gsL').textContent='ออฟไลน์'}return null}
+
+function parseGS(rows){
+  try{const tr=[];const BU=['TR','VG3','TVB','TRL','TRC','EVP','YOD'];
+  for(let i=0;i<rows.length;i++){const r=rows[i];if(!r||!r[1])continue;const bu=r[1].toString().trim();if(!BU.includes(bu))continue;
+    const p=v=>{const n=parseFloat(String(v||'0').replace(/[,\s]/g,''));return isNaN(n)?0:n};
+    tr.push({bu,op:{ih:{s:p(r[2]),h:p(r[3]),c:p(r[4])},pb:{s:p(r[5]),h:p(r[6]),c:p(r[8])},sum:p(r[9])},ad:{ih:{s:p(r[10]),h:p(r[11]),c:p(r[12])},pb:{s:p(r[13]),h:p(r[14]),c:p(r[16])},sum:p(r[17])},ppl:p(r[18]),onb:{c:p(r[19]),e:p(r[20])},bgt:{p:p(r[22]),a:p(r[23]),r:p(r[24])},tot:{s:p(r[25]),h:p(r[26]),c:p(r[27]),ob:p(r[19]),a:p(r[31]),r:p(r[32])}})}
+  const ds=[];const dB=['TR','VG3','TVB','TRL'];let inD=false;
+  for(let i=0;i<rows.length;i++){const r=rows[i];if(r&&r[2]&&String(r[2]).includes('ยอดพนักงาน')){inD=true;continue}
+    if(inD&&r&&r[1]){const bu=r[1].toString().trim();if(dB.includes(bu)){const p=v=>{const n=parseFloat(String(v||'0').replace(/[,%\s]/g,''));return isNaN(n)?0:n};ds.push({bu,e:p(r[2]),t:p(r[3]),s:p(r[4]),a:p(r[5]),p:p(r[6])})}}}
+  if(tr.length>0)return{training:tr,dsd:ds}}catch(e){}return null}
+
+function renderScale(svL,svR,scBId,ilId,irId,vId,plId,prId,tOP,tAD){
+  const total=tOP+tAD||1;
+  document.getElementById(svL).textContent=tOP;document.getElementById(svR).textContent=tAD;
+  const diff=tOP-tAD;const tilt=Math.max(-10,Math.min(10,(diff/Math.max(total,1))*25));
+  document.getElementById(scBId).setAttribute('transform','rotate('+(-tilt)+')');
+  const sIL=document.getElementById(ilId),sIR=document.getElementById(irId);sIL.innerHTML='';sIR.innerHTML='';
+  for(let i=0;i<Math.min(tOP,7);i++){sIL.innerHTML+='<rect x="'+(32+i*5)+'" y="'+(44-Math.floor(i/4)*6)+'" width="6" height="6" rx="1" fill="#10b981" opacity=".85"/>'}
+  for(let i=0;i<Math.min(tAD,10);i++){sIR.innerHTML+='<rect x="'+(198+i*4)+'" y="'+(44-Math.floor(i/5)*6)+'" width="6" height="6" rx="1" fill="#ef4444" opacity=".85"/>'}
+  const scV=document.getElementById(vId);const opP=(tOP/total*100).toFixed(1),adP=(tAD/total*100).toFixed(1);
+  if(diff>0){scV.textContent='✅ ตาม Plan มากกว่า';scV.style.background='rgba(16,185,129,.15)';scV.style.color='#10b981'}
+  else if(diff<0){scV.textContent='⚠️ Ad-Hoc มากกว่า!';scV.style.background='rgba(239,68,68,.15)';scV.style.color='#ef4444'}
+  else{scV.textContent='⚖️ สมดุล';scV.style.background='rgba(251,191,36,.15)';scV.style.color='#fbbf24'}
+  document.getElementById(plId).textContent='ตาม Plan '+opP+'%';
+  document.getElementById(prId).textContent='Ad-Hoc '+adP+'%';
+}
+
+function renderTop5(cid,T){
+  const tS=T.reduce((s,d)=>s+d.tot.s,0),tH=T.reduce((s,d)=>s+d.tot.h,0),tC=T.reduce((s,d)=>s+d.tot.c,0);
+  const tIH=T.reduce((s,d)=>s+(d.op.ih.s+d.op.ih.h+d.op.ih.c+d.ad.ih.s+d.ad.ih.h+d.ad.ih.c),0);
+  const tPB=T.reduce((s,d)=>s+(d.op.pb.s+d.op.pb.h+d.op.pb.c+d.ad.pb.s+d.ad.pb.h+d.ad.pb.c),0);
+  let sk=[{n:'Hard Skills',v:tH,c:'#a78bfa'},{n:'Soft Skills',v:tS,c:'#5ecfcf'},{n:'Compliance',v:tC,c:'#94a3b8'},{n:'Inhouse',v:tIH,c:'#3b82f6'},{n:'Public',v:tPB,c:'#ec4899'}];
+  sk.sort((a,b)=>b.v-a.v);const mx=sk[0]?.v||1;
+  const el=document.getElementById(cid);el.innerHTML='';
+  sk.slice(0,5).forEach((s,i)=>{el.innerHTML+='<div class="t5-row"><div class="t5-rank">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+'</div><div class="t5-name">'+s.n+'</div><div class="t5-bar-bg"><div class="t5-bar-f" style="width:'+(s.v/mx*100).toFixed(0)+'%;background:'+s.c+'"></div></div><div class="t5-val" style="color:'+s.c+'">'+s.v+'</div></div>'});
+}
+
+function renderRace(cid,D){
+  const t=document.getElementById(cid);t.innerHTML='';
+  const rn=['🏃‍♂️','🏃‍♀️','🏃','🏃‍♂️'];
+  D.forEach((d,i)=>{
+    const pct=Math.min(d.p,100);const grad=pct>=50?'linear-gradient(90deg,#10b981,#34d399)':pct>=10?'linear-gradient(90deg,#f59e0b,#fbbf24)':'linear-gradient(90deg,#ef4444,#f87171)';
+    t.innerHTML+='<div class="race-lane"><div class="race-bu">'+(BU_META[d.bu]?.icon||'')+' '+d.bu+'</div><div class="race-road"><div class="race-target" style="left:50%"><div class="race-target-lbl">50%</div></div><div class="race-runner" style="width:'+Math.max(pct,4)+'%;background:'+grad+'"><span class="ri">'+rn[i%4]+'</span></div><div class="race-flag">🏁</div></div><div class="race-pct" style="color:'+(pct>=50?'#10b981':pct>=10?'#fbbf24':'#ef4444')+'">'+d.p.toFixed(1)+'%</div></div>';
+  });
+  const ts=D.reduce((s,d)=>s+d.s,0),tt=D.reduce((s,d)=>s+d.t,0),ap=tt>0?(ts/tt*100):0;
+  t.innerHTML+='<div class="race-sum">🏁 เส้นชัย = ยื่นครบ 50% ของพนักงาน | ภาพรวม: <span style="color:'+(ap>=50?'#10b981':ap>=10?'#fbbf24':'#ef4444')+'">'+ap.toFixed(1)+'%</span> ('+ts+'/'+tt+' คน)</div>';
+}
+
+function render(data){
+  const F=FIL;const T=F==='ALL'?data.training:data.training.filter(d=>d.bu===F);const D=F==='ALL'?data.dsd:data.dsd.filter(d=>d.bu===F);
+  const S=(a,fn)=>a.reduce((s,d)=>s+fn(d),0);
+  Object.values(CTS).forEach(c=>{try{c.destroy()}catch(e){}});CTS={};
+  Chart.defaults.font.family="'Inter','IBM Plex Sans Thai',sans-serif";Chart.defaults.font.size=12;Chart.defaults.color='#94a3b8';
+
+  const tP=S(T,d=>d.bgt.p),tA=S(T,d=>d.tot.a),tR=S(T,d=>d.tot.r);
+  const tSoft=S(T,d=>d.tot.s),tHard=S(T,d=>d.tot.h),tComp=S(T,d=>d.tot.c),tOnb=S(T,d=>d.onb.c),tOnbE=S(T,d=>d.onb.e);
+  const tOP=S(T,d=>d.op.sum),tAD=S(T,d=>d.ad.sum),tCrs=tOP+tAD,tPpl=S(T,d=>d.ppl);
+  const dTgt=S(D,d=>d.t),dSub=S(D,d=>d.s),dApp=S(D,d=>d.a),dEmp=S(D,d=>d.e),dPct=dTgt>0?(dSub/dTgt*100):0;
+  const bClr=['#1a5276','#2ecc71','#e74c3c','#f39c12','#3498db','#e91e8b','#8e44ad'];
+  const buLbls=T.map(d=>(BU_META[d.bu]?.icon||'')+' '+d.bu);
+  const utilPct=tP>0?(tA/tP*100):0;
+
+  // ===== ZONE 0: EXECUTIVE SUMMARY =====
+  document.getElementById('k0Bgt').textContent=fm(tP);
+  document.getElementById('k0Act').textContent=fm(tA);
+  document.getElementById('k0ActSub').textContent=utilPct.toFixed(1)+'% ของงบ';
+  document.getElementById('k0Rem').textContent=fm(tR);
+  document.getElementById('k0RemSub').textContent=(tP>0?(tR/tP*100).toFixed(1):0)+'% คงเหลือ';
+  document.getElementById('k0Crs').textContent=tCrs+tOnb;
+  document.getElementById('k0CrsSub').textContent='ตาม Plan '+tOP+' / Ad-Hoc '+tAD+' / Onb '+tOnb;
+  document.getElementById('k0Ppl').textContent=fm(tPpl+tOnbE);
+  document.getElementById('k0Dsd').textContent=dPct.toFixed(1)+'%';
+  document.getElementById('k0ActBar').style.width=Math.min(utilPct,100)+'%';
+  document.getElementById('k0RemBar').style.width=Math.min(tP>0?(tR/tP*100):0,100)+'%';
+  document.getElementById('k0DsdBar').style.width=Math.min(dPct*2,100)+'%';
+
+  if(ZONE===0){
+    // Donut: สัดส่วนการใช้งบ + Utilization center
+    const bD=T.map(d=>d.tot.a);const hasB=bD.some(v=>v>0);
+    document.getElementById('exUtilPct').textContent=utilPct.toFixed(1)+'%';
+    CTS.exDn=new Chart(document.getElementById('exDn'),{type:'doughnut',data:{labels:T.map(d=>d.bu),datasets:[{data:hasB?bD:[1],backgroundColor:hasB?bClr.slice(0,T.length):['#334155'],borderWidth:2,borderColor:'#1e293b',hoverOffset:5}]},options:{responsive:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+fm(c.parsed)+' บาท ('+((c.parsed/(tA||1))*100).toFixed(1)+'%)'}}}}});
+    const lgE=document.getElementById('exLg');lgE.innerHTML='';T.forEach((d,i)=>{
+      const u=d.bgt.p>0?(d.tot.a/d.bgt.p*100).toFixed(1):'0.0';
+      lgE.innerHTML+='<div class="lg-i"><div class="lg-d" style="background:'+bClr[i]+'"></div><span class="lg-b">'+d.bu+'</span>'+fm(d.tot.a)+' <span style="color:'+(parseFloat(u)>30?'#ef4444':'#64748b')+';font-size:10px">('+u+'%)</span></div>'});
+
+    // ประเภทหลักสูตร by BU
+    CTS.exType=new Chart(document.getElementById('exChType'),{type:'bar',data:{labels:buLbls,datasets:[
+      {label:'Soft',data:T.map(d=>d.tot.s),backgroundColor:'#5ecfcf',barThickness:20,borderRadius:{topLeft:3,bottomLeft:3}},
+      {label:'Hard',data:T.map(d=>d.tot.h),backgroundColor:'#a78bfa',barThickness:20},
+      {label:'Compliance',data:T.map(d=>d.tot.c),backgroundColor:'#94a3b8',barThickness:20},
+      {label:'Onboarding',data:T.map(d=>d.tot.ob),backgroundColor:'#f5841f',barThickness:20,borderRadius:{topRight:3,bottomRight:3}}
+    ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,padding:8,font:{size:10,weight:600},color:'#94a3b8'}}},scales:{x:{stacked:true,grid:{color:'rgba(51,65,85,.3)'},ticks:{font:{size:10},color:'#64748b'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11,weight:700},color:'#94a3b8'}}}}});
+
+    renderScale('exSvL','exSvR','scB','sIL','sIR','scV','scPL','scPR',tOP,tAD);
+    renderTop5('top5',T);
+    renderRace('raceTrack',D);
+
+    // Alerts
+    const al=document.getElementById('exAlerts');al.innerHTML='';
+    const hBU=T.filter(d=>d.bgt.p>0&&(d.tot.a/d.bgt.p*100)>30);
+    hBU.forEach(d=>{al.innerHTML+='<div class="al-item warn">⚠️ '+d.bu+' ใช้งบ '+(d.tot.a/d.bgt.p*100).toFixed(1)+'% แล้ว (Q1)</div>'});
+    if(dPct<10){al.innerHTML+='<div class="al-item danger">🚨 กรมพัฒฯ ยื่นแค่ '+dPct.toFixed(1)+'% — ต่ำกว่าเป้ามาก</div>'}
+    if(tAD>tOP){al.innerHTML+='<div class="al-item warn">📌 Ad-Hoc ('+tAD+') มากกว่า Plan ('+tOP+')</div>'}
+    const zBU=T.filter(d=>d.bgt.p>0&&d.tot.a===0);
+    if(zBU.length>0){al.innerHTML+='<div class="al-item info">💤 '+zBU.map(d=>d.bu).join(', ')+' ยังไม่ใช้งบ</div>'}
+    if(al.innerHTML===''){al.innerHTML='<div class="al-item ok">✅ ทุกอย่างปกติ</div>'}
+  }
+
+  // ===== ZONE 1: BUDGET =====
+  document.getElementById('z1Plan').textContent=fm(tP);
+  document.getElementById('z1Act').textContent=fm(tA);
+  document.getElementById('z1ActPct').textContent=utilPct.toFixed(1)+'% ของงบ';
+  document.getElementById('z1Rem').textContent=fm(tR);
+  document.getElementById('z1RemPct').textContent=(tP>0?(tR/tP*100).toFixed(1):0)+'% คงเหลือ';
+  document.getElementById('z1Crs').textContent=tCrs+tOnb;
+  document.getElementById('z1Ppl').textContent=fm(tPpl);
+  if(ZONE===1){
+    CTS.bgt=new Chart(document.getElementById('chBgt'),{type:'bar',data:{labels:buLbls,datasets:[
+      {label:'ใช้จริง',data:T.map(d=>d.tot.a),backgroundColor:T.map((_,i)=>bClr[i%bClr.length]+'cc'),borderRadius:5,barPercentage:.5},
+      {label:'คงเหลือ',data:T.map(d=>d.tot.r),backgroundColor:'rgba(100,116,139,.15)',borderRadius:5,barPercentage:.5}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:8,font:{size:11,weight:600},color:'#94a3b8'}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:12,weight:700},color:'#94a3b8'}},y:{stacked:true,grid:{color:'rgba(51,65,85,.3)'},ticks:{font:{size:11},color:'#64748b',callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}}}}});
+    const util=T.map(d=>d.bgt.p>0?(d.tot.a/d.bgt.p*100):0);const uClr=util.map(v=>v>50?'#ef4444':v>25?'#f59e0b':'#10b981');
+    CTS.util=new Chart(document.getElementById('chUtil'),{type:'bar',data:{labels:buLbls,datasets:[{data:util,backgroundColor:uClr,borderRadius:5,barPercentage:.55}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11,weight:700},color:'#94a3b8'}},y:{grid:{color:'rgba(51,65,85,.3)'},ticks:{font:{size:11},color:'#64748b',callback:v=>v+'%'},max:100}},animation:{onComplete:function(){const ch=this,c2=ch.ctx;c2.font='700 11px Inter';c2.textAlign='center';c2.textBaseline='bottom';ch.getDatasetMeta(0).data.forEach((b,i)=>{c2.fillStyle=uClr[i];c2.fillText(util[i].toFixed(1)+'%',b.x,b.y-2)})}}}});
+    const al=document.getElementById('alertBgt');const hBU=T.filter(d=>d.bgt.p>0&&(d.tot.a/d.bgt.p*100)>30);
+    if(hBU.length>0){al.style.display='block';al.innerHTML='⚠️ <strong>เตือน:</strong> '+hBU.map(d=>d.bu+' ใช้งบ '+(d.tot.a/d.bgt.p*100).toFixed(1)+'%').join(', ')+' — Q1 เท่านั้น!'}else{al.style.display='none'}
+    const bD=T.map(d=>d.tot.a);const hasB=bD.some(v=>v>0);
+    CTS.dn=new Chart(document.getElementById('chDn'),{type:'doughnut',data:{labels:T.map(d=>d.bu),datasets:[{data:hasB?bD:[1],backgroundColor:hasB?bClr.slice(0,T.length):['#334155'],borderWidth:2,borderColor:'#1e293b',hoverOffset:5}]},options:{responsive:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+fm(c.parsed)+' บาท'}}}}});
+    const lgD=document.getElementById('lgDn');lgD.innerHTML='';T.forEach((d,i)=>{lgD.innerHTML+='<div class="lg-i"><div class="lg-d" style="background:'+bClr[i]+'"></div><span class="lg-b">'+d.bu+'</span>'+fm(d.tot.a)+'</div>'});
+  }
+
+  // ===== ZONE 2: COURSES =====
+  document.getElementById('z2Soft').textContent=tSoft;document.getElementById('z2Hard').textContent=tHard;
+  document.getElementById('z2Comp').textContent=tComp;document.getElementById('z2Onb').textContent=tOnb;
+  document.getElementById('z2OnbPpl').textContent=tOnbE+' คน / '+T.filter(d=>d.onb.c>0).length+' รุ่น';
+  document.getElementById('z2PA').textContent=tOP+' / '+tAD;
+  if(ZONE===2){
+    CTS.type=new Chart(document.getElementById('chType'),{type:'bar',data:{labels:buLbls,datasets:[
+      {label:'Soft',data:T.map(d=>d.tot.s),backgroundColor:'#5ecfcf',barThickness:26,borderRadius:{topLeft:3,bottomLeft:3}},
+      {label:'Hard',data:T.map(d=>d.tot.h),backgroundColor:'#a78bfa',barThickness:26},
+      {label:'Compliance',data:T.map(d=>d.tot.c),backgroundColor:'#94a3b8',barThickness:26},
+      {label:'Onboarding',data:T.map(d=>d.tot.ob),backgroundColor:'#f5841f',barThickness:26,borderRadius:{topRight:3,bottomRight:3}}
+    ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,padding:10,font:{size:12,weight:600},color:'#94a3b8'}}},scales:{x:{stacked:true,grid:{color:'rgba(51,65,85,.3)'},ticks:{font:{size:11},color:'#64748b'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:13,weight:700},color:'#94a3b8'}}}}});
+    renderScale('z2SvL','z2SvR','scB2','z2IL','z2IR','z2ScV','z2PL','z2PR',tOP,tAD);
+    renderTop5('top5d',T);
+  }
+
+  // ===== ZONE 3: DSD =====
+  document.getElementById('z3Tgt').textContent=fm(dTgt);document.getElementById('z3Sub').textContent=fm(dSub);
+  document.getElementById('z3App').textContent=fm(dApp);document.getElementById('z3Pct').textContent=dPct.toFixed(2)+'%';
+  document.getElementById('z3Emp').textContent=fm(dEmp);
+  if(ZONE===3){
+    const dG=document.getElementById('dsdGrid');dG.innerHTML='';
+    D.forEach(d=>{const cls=d.p>=50?'hi':d.p>=10?'mid':'low';
+      dG.innerHTML+='<div class="dsd-row"><div class="dsd-bu">'+(BU_META[d.bu]?.icon||'')+' '+d.bu+'</div><div class="dsd-bg"><div class="dsd-f '+cls+'" style="width:'+Math.min(d.p*2,100)+'%"></div></div><div class="dsd-inf" style="color:'+(d.p<10?'#ef4444':'#fbbf24')+'">'+d.p.toFixed(1)+'%<br><span style="font-size:10px;color:#64748b">'+d.s+'/'+d.t+'</span></div></div>'});
+    renderRace('raceTrackD',D);
+  }
+}
+
+async function init(){const gs=await loadGS();DATA=gs||FB;render(DATA);setInterval(async()=>{const d=await loadGS();if(d){DATA=d;render(d)}},REFRESH)}
+init();
+</script>
+</body>
+</html>
