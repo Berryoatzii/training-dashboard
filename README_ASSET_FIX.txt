@@ -1,0 +1,1 @@
+Restoring class-photo assets on GitHub Pages. This file can be removed after verification.
