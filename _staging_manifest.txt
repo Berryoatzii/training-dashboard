@@ -1,0 +1,1 @@
+Use local root assets for GitHub Pages standalone site.
