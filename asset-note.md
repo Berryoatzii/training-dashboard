@@ -1,1 +1,0 @@
-Binary workshop photos are being restored to the gh-pages branch so the class-photo figure blocks render reliably on GitHub Pages.
