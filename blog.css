@@ -101,3 +101,9 @@
 .iris-data th:first-child{width:27%}
 .iris-data td strong{display:block}
 @media(max-width:440px){.iris-data table{font-size:.85rem}.iris-data th,.iris-data td{padding:.35rem}}
+.iris-original{border:1px solid var(--blog-line);background:#fffaf4;padding:.65rem .85rem;margin:.75rem 0 1.25rem}
+.iris-original summary{color:var(--blog-accent)}
+.iris-original[open] summary{margin-bottom:.7rem}
+.blog-story .iris-original figure{margin:0}
+.iris-original img{height:auto}
+.iris-original a{display:block}
