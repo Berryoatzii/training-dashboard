@@ -91,3 +91,13 @@
 .iris-use{margin:1.3rem 0 .8rem;padding:1rem 1.15rem;background:#f3e5dc;border-left:4px solid var(--blog-accent)}
 .iris-use h3{margin:.18rem 0 .55rem}.iris-use p:last-child{margin-bottom:0}
 @media(max-width:680px){.iris-map ol{grid-template-columns:1fr}}
+.iris-depth{margin:1.45rem 0;border-top:1px solid var(--blog-line);padding-top:.7rem}
+.iris-depth h3{font-size:1.35rem;line-height:1.35}
+.iris-depth li+li{margin-top:.45rem}
+.iris-data{margin:.9rem 0 1.15rem;max-width:100%}
+.iris-data table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fffaf4;font-size:.94rem}
+.iris-data th,.iris-data td{text-align:left;vertical-align:top;padding:.6rem .64rem;border:1px solid var(--blog-line);overflow-wrap:anywhere}
+.iris-data thead th{background:#f2e2d6}
+.iris-data th:first-child{width:27%}
+.iris-data td strong{display:block}
+@media(max-width:440px){.iris-data table{font-size:.85rem}.iris-data th,.iris-data td{padding:.35rem}}
